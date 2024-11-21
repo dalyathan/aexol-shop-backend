@@ -52,7 +52,6 @@ export class PrivyAuthenticationStrategy implements AuthenticationStrategy<Privy
 
         const user = await this.externalAuthenticationService.findCustomerUser(ctx, this.name, privyUser.id);
         if (user) {
-            console.log('user we have customer')
             return user;
         }
         return await  this.externalAuthenticationService.createCustomerAndUser(ctx, {
