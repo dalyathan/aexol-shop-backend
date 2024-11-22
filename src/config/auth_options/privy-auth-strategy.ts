@@ -1,5 +1,6 @@
 import {
     AuthenticationStrategy,
+    CustomerService,
     ExternalAuthenticationService,
     Injector,
     RequestContext,
@@ -17,6 +18,7 @@ export class PrivyAuthenticationStrategy implements AuthenticationStrategy<Privy
     readonly name = 'privy';
     private client: PrivyClient;
     private externalAuthenticationService: ExternalAuthenticationService;
+    private customerService: CustomerService;
 
     constructor(private appId: string, private appSecret: string) {
         // The clientId is obtained by creating a new OAuth client ID as described
@@ -29,6 +31,7 @@ export class PrivyAuthenticationStrategy implements AuthenticationStrategy<Privy
         // of the common functionality related to dealing with external authentication
         // providers.
         this.externalAuthenticationService = injector.get(ExternalAuthenticationService);
+        this.customerService= injector.get(CustomerService);
     }
 
     defineInputType(): DocumentNode {
@@ -46,21 +49,26 @@ export class PrivyAuthenticationStrategy implements AuthenticationStrategy<Privy
         
         const privyUser = await this.client.getUser({idToken: data.privyIdToken})
         const email= (privyUser.linkedAccounts?.[0] as any)?.address
-        if (!privyUser || !privyUser.id || !email) {
+        if (!privyUser || !privyUser.id) {
             return false;
         }
 
-        const user = await this.externalAuthenticationService.findCustomerUser(ctx, this.name, privyUser.id);
-        if (user) {
-            return user;
+        const vendureUser = await this.externalAuthenticationService.findCustomerUser(ctx, this.name, privyUser.id);
+        if (vendureUser) {
+            return vendureUser;
         }
-        return await  this.externalAuthenticationService.createCustomerAndUser(ctx, {
+        const user= await  this.externalAuthenticationService.createCustomerAndUser(ctx, {
             strategy: this.name,
             externalIdentifier: privyUser.id,
             verified: !privyUser.isGuest,
-            emailAddress: email,
+            emailAddress: privyUser.id,
             firstName: '',
             lastName: '',
         });
+        const customer= await this.customerService.findOneByUserId(ctx, user.id);
+        if(customer){
+            await this.customerService.update(ctx, {id: customer.id,  customFields:{linkedAccounts: JSON.stringify(privyUser.linkedAccounts,null,2) }})
+        }
+        return user;
     }
 }
