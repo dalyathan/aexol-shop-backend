@@ -103,6 +103,10 @@ database may be orchestrated with Docker Compose.
 In Vendure, your custom functionality will live in [plugins](https://www.vendure.io/docs/plugins/).
 These should be located in the `./src/plugins` directory.
 
+## Privy
+
+[Privy](https://docs.privy.io/) based `AuthenticationStrategy` has been implemented and should be available once you have set your privy app id and app secret respectively in the `PRIVY_APP_ID` and `PRIVY_APP_SECRET` variables in your `.env` file. If you don't have a privy account(and app), you can [create one](https://dashboard.privy.io/).
+
 ## Migrations
 
 [Migrations](https://www.vendure.io/docs/developer-guide/migrations/) allow safe updates to the database schema. Migrations
